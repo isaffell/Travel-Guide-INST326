@@ -1,5 +1,5 @@
 import unittest
-from webscraper import WebScraper
+from WebScraper import WebScraper
 
 class TestWebScraper(unittest.TestCase):
     def setUp(self):
