@@ -38,18 +38,22 @@ class MetroPlacesFinder:
         geo_url = f"https://maps.googleapis.com/maps/api/geocode/json"
         params = {"address": f"{self.metro_stop_name} Metro Station, Washington, DC", "key": self.api_key}
         response = requests.get(geo_url, params=params).json()
+        
         if response["results"]:
-            return response["results"][0]["geometry"]["location"]
+            location = response["results"][0]["geometry"]["location"]
+            print("Location Coordinates:", location)  
+            return location
         return None
+    
 
-    def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attaction"]):
+    def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attraction"]):
         """rewrite"""
 
         url = "https://places.googleapis.com/v1/places:searchNearby"
         headers = {
             "Content-Type": "application/json",
             "X-Goog-Api-Key": self.api_key,
-            "X-Goog-FieldMask": "places.displayName, places.formattedAddress, places.location, places.rating, places.primaryType"
+            "X-Goog-FieldMask": "places.displayName,places.primaryType,places.location"
         }   
 
         body = {
@@ -57,7 +61,10 @@ class MetroPlacesFinder:
             "maxResultCount": 10, 
             "locationRestriction": {
                 "circle": {
-                    "center":self.location, 
+                    "center":{
+                        "latitude":self.location["lat"],
+                        "longitude": self.location["lng"]
+                    },
                     "radius": radius_meters
                 }
             }
@@ -65,13 +72,17 @@ class MetroPlacesFinder:
 
         response = requests.post(url, headers=headers, json=body).json()
 
-        for place in response.get("places", []):
-            self.places_data.append({
-                "name": place["displayName"]["text"],
-                "type_of_activity": place.get("primaryType", "unknown"),
-                "walking_distance": radius_meters / 100,
-                "rating": place.get("rating", 0)
-            })
+        print("API Response:", response)
+
+        if "places" in response:
+            for place in response["places"]:
+                self.places_data.append({
+                    "name": place.get("displayName", {}).get("text", "Unknown Name"),
+                    "type_of_activity": place.get("primaryType", "Unknown"),
+                    "rating": place.get("rating", 0)
+                })
+
+        print("Processed Places Data:", self.places_data)
 
     def places_filter(self, user_preferences):
         """ This method will filter the list of places near the specified 
