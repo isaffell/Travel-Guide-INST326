@@ -6,21 +6,17 @@ Assignment: Final Project, DC Travel Guide
 Date: 4/19/2025
 
 """
-#pip install requests
+
 import requests
-import os
-API_KEY = "AIzaSyATvTVK0wSoJUIrkauKPPnMxhlY-7dgt-w"
-API_KEY = os.environ.get("GOOGLE_API_KEY")
-# in terminal $env:GOOGLE_API_KEY = "AIzaSyATvTVK0wSoJUIrkauKPPnMxhlY-7dgt-w"
+from bs4 import BeautifulSoup
 
-
-class MetroPlacesFinder:
+class WebScraper:
     """A class for scraping and recommending places in the DMV 
     area along the Metro Green Line based on user preferences such 
     as type of activity, walking distance from the metro, Google-based ratings.
     """
 
-    def __init__(self, metro_stop_name, api_key):
+    def __init__(self, metro_stop_name):
         """Will initialize the WebScraper instance for a specific 
         stop along the Metro Green Line
         
@@ -29,49 +25,15 @@ class MetroPlacesFinder:
         """
 
         self.metro_stop_name = metro_stop_name
-        self.api_key = api_key
         self.places_data = []
-        self.location = self.get_location_coordinates()
 
-    def get_location_coordinates(self):
-        """ Uses the Geocoding API to get latitude and longitude coordinates"""
-        geo_url = f"https://maps.googleapis.com/maps/api/geocode/json"
-        params = {"address": f"{self.metro_stop_name} Metro Station, Washington, DC", "key": self.api_key}
-        response = requests.get(geo_url, params=params).json()
-        if response["results"]:
-            return response["results"][0]["geometry"]["location"]
-        return None
+    def places_scraper(self):
+        """This method will scrape data for places near the 
+        specific Green Line stop. It will also populate the places_data with dicts 
+        containing name, type_of_activity, walking_distance, and rating.
+        """
 
-    def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attaction"]):
-        """rewrite"""
-
-        url = "https://places.googleapis.com/v1/places:searchNearby"
-        headers = {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": self.api_key,
-            "X-Goog-FieldMask": "places.displayName, places.formattedAddress, places.location, places.rating, places.primaryType"
-        }   
-
-        body = {
-            "includedTypes": included_types, 
-            "maxResultCount": 10, 
-            "locationRestriction": {
-                "circle": {
-                    "center":self.location, 
-                    "radius": radius_meters
-                }
-            }
-        }   
-
-        response = requests.post(url, headers=headers, json=body).json()
-
-        for place in response.get("places", []):
-            self.places_data.append({
-                "name": place["displayName"]["text"],
-                "type_of_activity": place.get("primaryType", "unknown"),
-                "walking_distance": radius_meters / 100,
-                "rating": place.get("rating", 0)
-            })
+        #placeholder for the scraping logic using requests/BeautifulSoup
 
     def places_filter(self, user_preferences):
         """ This method will filter the list of places near the specified 
@@ -140,9 +102,3 @@ class MetroPlacesFinder:
         return sorted(scored_places, key=lambda x: x["score"], reverse=True)
     
         # expected output [ {"name": "restaurant", "score": 10}, {"name": "museum", "score": 8},{"name": "park", "score": 6}]
-
-if __name__ == "__main__":
-    API_KEY = "AIzaSyATvTVK0wSoJUIrkauKPPnMxhlY-7dgt-w"
-    scraper = MetroPlacesFinder("Columbia Heights", API_KEY)
-    scraper.get_nearby_places()
-    print(scraper.places_data)
