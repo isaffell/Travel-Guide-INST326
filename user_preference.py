@@ -7,7 +7,7 @@ Date: 4/19/2025
 
 Challenges Encountered:
 """
-import WebScraper
+import MetroPlacesFinder
 class User_Preference: 
     """A class for obtaining the user preferences for a travel guide from Green Line Metro stops."""
     def __init__(self, users_name = "Guest"):
@@ -26,21 +26,9 @@ class User_Preference:
         self.preferences = {
             "type_of_activity": [],
             "max_walking_distance": 0.0,
-            "min_rating": 0.0
+        
         }
 
-    def calc_distance(self, places):
-        """This method will go through the list of all of the places and their corresponding walking
-        distance and sort in order of closest to farthest. 
-
-        Args: 
-            places (list): list of dictionaries with name value and distance key
-            
-        Returns:
-            sorted_by_distance(dict): a sorted dictionary
-        """
-        sorted_by_distance = sorted(places, key=lambda x: x['distance'])
-        return sorted_by_distance
         
     
     def sort_activity_types(self, places):
@@ -55,14 +43,18 @@ class User_Preference:
         ranked_places = []
         
         for place in places:
-                pass
-                #will go through places and get activity type
-                #if activity type is in preferences change score, otherwise 0
+                score = 0
+                if place["type_of_actvitity"].lower in self .preferences["type_of_activity"]:
+                    rank = self.preferences["type_of_activity"].index(place["type_of_activity"].lower())
+                    score += (len(self.preferences["type_of_activity"]) - rank ) *5
+                    
+                distance_score = max(0, self.preferences["max_walking_distance"] - places.get("walking_distance", 0))
+                score += distance_score*3
+                rating_score = max(0, places.get("rating", 0) - self.preferences.get("min_rating", 0))
+                score += rating_score *1
                 
-        #return a list of the ranked places
-        pass
-    
-    
+                ranked_places.append({**place, "score": score})
+        return sorted(ranked_places, key=lambda x:x["score"], reverse = True)
     
     def user_preferences(self):
         """
@@ -83,9 +75,10 @@ class User_Preference:
         
         activity_types = ["Food", "Museums and Monuments", "Sporty", "Social", "Nature"]
         
-        print(f"Hello {self.users_name}! Welcome to the Green Line Metro Trip Guide!\n")
-        print(f"Based on your preferences, you will be provided with the top 5 places to travel to.\n")
-        print(f"These are the Green Line Metro stop options, from College Park to D.C. :\n")
+        print(f"Hello {self.users_name}! Welcome to the Green Line Metro Trip Guide!\n" + 
+              "Based on your preferences, you will be provided with the top 5 places to travel to.\n" +
+              "These are the Green Line Metro stop options, from College Park to D.C. :\n"
+              )
         print(f"{all_metro_stops}\n")
         
         metro_stop_name = input("Which metro stop would you like to get off at? Please enter name precisely with '-' if necessary.\n")
@@ -93,11 +86,15 @@ class User_Preference:
         
         #will use weights to determine what is most important to the user
         #if activity type is the most important, weight matches activity type
-        print(f"{self.users_name}, now that you have selected {metro_stop_name}, please select what activity types you like. \n")
-        print(f"These are the following activity types{activity_types}")
+        
+        print(f"{self.users_name}, now that you have selected {metro_stop_name}, please select what activity types you like. \n" +
+              "These are the following activity types{activity_types}"
+              )
+        
         user_places = input(f"Please enter the activity type in order from most preferred to least, separating with commas.\n")
         user_places_list = user_places.split(",")
         stripped_activities = []
+        
         for user_places in user_places_list:
             stripped_activities.append(user_places.strip().lower())
         self.preferences["type_of_activity"] = stripped_activities
@@ -105,25 +102,23 @@ class User_Preference:
         #if distance is the most important, weight matches distance
         max_distance = float(input("What is the maximum distance you want to walk in miles?\n "))
         self.preferences["max_walking_distance"] = max_distance
-        
-        #if rating is the most important, weight matches rating
-        desired_rating = float(input("What's the minimum rating you desire? Please enter a whole number between 1-5."))
-        self.preferences["min_rating"] = desired_rating
-        
+    
         
 if __name__ == "__main__":
 
+    API_KEY = MetroPlacesFinder.loa_api_key()
+    
     user = User_Preference()
     user.user_preferences()
 
-    scraper = WebScraper(user.metro_stop_name)
-    scraper.places_scraper()
-
-    filtered = scraper.places_filter(user.preferences)
+    scraper = MetroPlacesFinder.MetroPlacesFinder(user.metro_stop_name, API_KEY)
+    scraper.get_nearby_places()
     
-    #Define the weights for the scoring system
-    #Rank the places
-    #Print out the top 5 places accordingly
+    for place in scraper.places_data:
+        place["walking_distance"] = 0.5
         
-        
+    ranked_places = user.sort_activity_types(scraper.places_data)   
+    print("Top 5 recommendations for you are:")
+    for place in ranked_places[:5]:
+        print(f"- {place['name']} ({place['type_of_activity'].title()}, {place['distance']} miles")
     
