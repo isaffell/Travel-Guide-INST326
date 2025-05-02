@@ -36,7 +36,10 @@ class MetroPlacesFinder:
     def get_location_coordinates(self):
         """ Uses the Geocoding API to get latitude and longitude coordinates"""
         geo_url = f"https://maps.googleapis.com/maps/api/geocode/json"
-        params = {"address": f"{self.metro_stop_name} Metro Station, Washington, DC", "key": self.api_key}
+        params = {
+            "address": f"{self.metro_stop_name} Metro Station, Washington, DC", 
+            "key": self.api_key
+        }
         response = requests.get(geo_url, params=params).json()
         
         if response["results"]:
@@ -48,6 +51,10 @@ class MetroPlacesFinder:
 
     def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attraction"]):
         """rewrite"""
+
+        if not self.location:
+            print("Error: Could not get location coordinates.")
+            return
 
         url = "https://places.googleapis.com/v1/places:searchNearby"
         headers = {
@@ -71,15 +78,13 @@ class MetroPlacesFinder:
         }   
 
         response = requests.post(url, headers=headers, json=body).json()
-
         print("API Response:", response)
 
         if "places" in response:
             for place in response["places"]:
                 self.places_data.append({
                     "name": place.get("displayName", {}).get("text", "Unknown Name"),
-                    "type_of_activity": place.get("primaryType", "Unknown"),
-                    "rating": place.get("rating", 0)
+                    "type_of_activity": place.get("primaryType", "Unknown")
                 })
 
         print("Processed Places Data:", self.places_data)
@@ -90,7 +95,7 @@ class MetroPlacesFinder:
 
         Args:
             user_prefereces (dict): dictionary with keys such as type_of_activity, 
-            max_walking_distance, and min_rating
+            max_walking_distance
 
         Returns:
             list: filtered list of places based off of user_preferences
@@ -99,8 +104,7 @@ class MetroPlacesFinder:
         filtered_list = []
         for place in self.places_data:
             if (place["type_of_activity"] in user_preferences["type_of_activity"] and
-                place["walking_distance"] <= user_preferences["max_walking_distance"] and
-                place["rating"] >= user_preferences["min_rating"]):
+                place["walking_distance"] <= user_preferences["max_walking_distance"]):
                 filtered_list.append(place)
         return filtered_list
     
@@ -113,7 +117,6 @@ class MetroPlacesFinder:
             user_preferences (dict): dict with keys including
                 - type_of_activity" list of preferred activity types (in order of preference)
                 - max_walking_distance: max acceptable walking distance
-                - min_rating: the min acceptable rating
             weights (dict): weight values for each factor. for example (activity:5, distance: 3, rating: 1)
 
         Returns:
@@ -133,8 +136,8 @@ class MetroPlacesFinder:
             score += distance_score * weights.get("distance", 1)
 
             #rating score
-            rating_score = max(0, place["rating"] - user_preferences["min_rating"])
-            score += rating_score * weights.get("rating", 1)
+           #rating_score = max(0, place["rating"] - user_preferences["min_rating"])
+           #score += rating_score * weights.get("rating", 1)
 
             return score
         
