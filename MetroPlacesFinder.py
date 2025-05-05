@@ -21,11 +21,11 @@ class MetroPlacesFinder:
     """
 
     def __init__(self, metro_stop_name, api_key):
-        """Will initialize the WebScraper instance for a specific 
-        stop along the Metro Green Line
+        """ This method will initialize the metro stop name and the api key
         
         Args: 
             metro_stop_name (str): the name of the metro green line stop.
+            api_key (str)
         """
 
         self.metro_stop_name = metro_stop_name
@@ -34,13 +34,16 @@ class MetroPlacesFinder:
         self.location = self.get_location_coordinates()
 
     def get_location_coordinates(self):
-        """ Uses the Geocoding API to get latitude and longitude coordinates"""
+        """ This method uses the Geocoding API to get latitude and longitude coordinates
+        
+        Args:
+        """
         geo_url = f"https://maps.googleapis.com/maps/api/geocode/json"
-        params = {
-            "address": f"{self.metro_stop_name} Metro Station, Washington, DC", 
+        parameters = {
+            "address": f"{self.metro_stop_name} Metro Station, DMV Area", 
             "key": self.api_key
         }
-        response = requests.get(geo_url, params=params).json()
+        response = requests.get(geo_url, parameters=parameters).json()
         
         if response["results"]:
             location = response["results"][0]["geometry"]["location"]
@@ -48,9 +51,12 @@ class MetroPlacesFinder:
             return location
         return None
     
-
     def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attraction"]):
-        """rewrite"""
+        """This method uses the Nearby Search (New) API to get places within a specified area.
+
+        Args:
+
+        """
 
         if not self.location:
             print("Error: Could not get location coordinates.")
@@ -59,8 +65,10 @@ class MetroPlacesFinder:
         url = "https://places.googleapis.com/v1/places:searchNearby"
         headers = {
             "Content-Type": "application/json",
-            "X-Goog-Api-Key": self.api_key,
-            "X-Goog-FieldMask": "places.displayName,places.primaryType,places.location"
+            "Google-Api-Key": self.api_key,
+            "Google-FieldMask": "places.displayName,places.primaryType,places.location"
+            #Field masks are a way for API callers to list fields that a request should return or update. 
+            #Using a FieldMask allows the API to avoid unnecessary work and improves performance
         }   
 
         body = {
@@ -84,7 +92,7 @@ class MetroPlacesFinder:
             for place in response["places"]:
                 self.places_data.append({
                     "name": place.get("displayName", {}).get("text", "Unknown Name"),
-                    "type_of_activity": place.get("primaryType", "Unknown")
+                    "type_of_activity": place.get("primaryType", "Unknown Type of Activity")
                 })
 
         print("Processed Places Data:", self.places_data)
@@ -95,7 +103,7 @@ class MetroPlacesFinder:
 
         Args:
             user_prefereces (dict): dictionary with keys such as type_of_activity, 
-            max_walking_distance
+            max_walking_distance ():
 
         Returns:
             list: filtered list of places based off of user_preferences
@@ -136,8 +144,8 @@ class MetroPlacesFinder:
             score += distance_score * weights.get("distance", 1)
 
             #rating score
-           #rating_score = max(0, place["rating"] - user_preferences["min_rating"])
-           #score += rating_score * weights.get("rating", 1)
+            #rating_score = max(0, place["rating"] - user_preferences["min_rating"])
+            #score += rating_score * weights.get("rating", 1)
 
             return score
         
