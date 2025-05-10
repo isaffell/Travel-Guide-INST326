@@ -28,8 +28,6 @@ class User_Preference:
             "max_walking_distance": 0.0,
         
         }
-
-        
     
     def sort_activity_types(self, places):
         """Sorts the places based on how well they match the user's input preferences.
@@ -44,6 +42,7 @@ class User_Preference:
         
         for place in places:
                 score = 0
+                
                 if place["type_of_actvitity"].lower in self .preferences["type_of_activity"]:
                     rank = self.preferences["type_of_activity"].index(place["type_of_activity"].lower())
                     score += (len(self.preferences["type_of_activity"]) - rank ) *5
@@ -70,16 +69,16 @@ class User_Preference:
                     max_walking_distance (float): Max distance the user wants to walk.
                     min_rating (float): Minimum rating the user wants for a place.
         """
-        all_metro_stops = ["Anacostia", "Archives", "Columbia Heights", "Congress Heights", "Fort Trotten", "Gallery PI-Chinatown", 
-                           "Georgia Ave-Petworth", "L'Enfant Plaza", "Mt Vernon", "Shaw-Howard U", "U Street", "Waterfront"]
+        all_metro_stops = ['Anacostia', 'Archives', 'Columbia Heights', 'Congress Heights', 'Fort Trotten', 'Gallery PI-Chinatown', 
+                           'Georgia Ave-Petworth', 'L''Enfant Plaza', 'Mt Vernon', 'Shaw-Howard U', 'U Street', 'Waterfront']
         
         activity_types = ["Food", "Museums and Monuments", "Sporty", "Social", "Nature"]
-        
-        print(f"Hello {self.users_name}! Welcome to the Green Line Metro Trip Guide!\n" + 
-              "Based on your preferences, you will be provided with the top 5 places to travel to.\n" +
-              "These are the Green Line Metro stop options, from College Park to D.C. :\n"
-              )
-        print(f"{all_metro_stops}\n")
+      
+        self.users_name = input(f"Hello, what is your name?" + "\n")
+        print(f"Hello {self.users_name}! Welcome to the Green Line Metro Trip Guide!\n")
+        print(f"Based on your preferences, you will be provided with the top 5 places to travel to.\n") 
+        print(f"These are the Green Line Metro stop options, from College Park to D.C. :\n")
+        print(", ".join(all_metro_stops) + "\n")
         
         metro_stop_name = input("Which metro stop would you like to get off at? Please enter name precisely with '-' if necessary.\n")
         self.metro_stop_name = metro_stop_name
@@ -87,9 +86,9 @@ class User_Preference:
         #will use weights to determine what is most important to the user
         #if activity type is the most important, weight matches activity type
         
-        print(f"{self.users_name}, now that you have selected {metro_stop_name}, please select what activity types you like. \n" +
-              "These are the following activity types{activity_types}"
-              )
+        print(f"{self.users_name}, now that you have selected {metro_stop_name}, please select what activity types you like. \n")
+        print("These are the following activity types: " + ", ".join(activity_types) + "\n")
+       
         
         user_places = input(f"Please enter the activity type in order from most preferred to least, separating with commas.\n")
         user_places_list = user_places.split(",")
@@ -106,7 +105,7 @@ class User_Preference:
         
 if __name__ == "__main__":
 
-    API_KEY = MetroPlacesFinder.loa_api_key()
+    API_KEY = MetroPlacesFinder.load_api_key()
     
     user = User_Preference()
     user.user_preferences()
