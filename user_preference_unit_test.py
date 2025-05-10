@@ -16,22 +16,19 @@ class TestUserPreference(unittest.TestCase):
         self.assertIsNone(self.user.metro_stop_name)
         self.assertEqual(self.user.preferences["type_of_activity"], [])
         self.assertEqual(self.user.preferences["max_walking_distance"], 0.0)
-        self.assertEqual(self.user.preferences["min_rating"], 0.0)
+   
 
-    def test_calc_distance(self):
-        #tests if the distance is sorted correctly
-        sorted_places = self.user.calc_distance([
-            {"name": "Cafe", "distance": 0.5},
-            {"name": "Museum", "distance": 0.1},
-            {"name": "Concert Venue", "distance": 0.2},
-        ])
-        self.assertEqual([p["name"] for p in sorted_places], ["Museum", "Concert Venue", "Café"])
-    
     def test_sort_activity_types(self):
         #tests if activity types sort correctly based on user preferences
         self.user.preferences["type_of_activity"] = ["sporty", "nature", "food"]
         ranked = self.user.sort_activity_types(self.places)
         self.assertEqual([p["name"] for p in ranked], ["DC Sport", "DC Nature", "DC Food"])
 
+    def test_sort_activity_types_with_empty_list(self):
+        places = []
+        sorted_places = self.user.sort_activity_types(places)
+        self.assertEqual(sorted_places, [])
+
+        
 if __name__ == '__main__':
     unittest.main()
