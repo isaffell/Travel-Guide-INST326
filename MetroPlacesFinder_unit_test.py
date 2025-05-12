@@ -28,6 +28,7 @@ class TestMetroPlacesFinder(unittest.TestCase):
 
     def test_places_filter(self):
         """This tests the places_filter method and returns only places that match user preferences"""
+
         filtered = self.finder.places_filter(self.user_preferences)
         
         # locations are within the distance and match a listed activity type
@@ -45,11 +46,11 @@ class TestMetroPlacesFinder(unittest.TestCase):
         # With "park" ranked highest in preferences, Diamond Teague Park should score best
         self.assertEqual(ranked[0]["name"], "Diamond Teague Park")
         self.assertTrue(ranked[0]["score"] >= ranked[-1]["score"])
+        self.assertTrue(ranked[0]["score"] > ranked[1]["score"], "First place should have a higher score")
+
+
+#if __name__ == "__main__":
+    #Unittest.main()
 
 if __name__ == "__main__":
     unittest.main()
-    
-    
-
-        
-        
