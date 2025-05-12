@@ -4,7 +4,7 @@ DC Metro Travel Guide for UMD Students
 
 This script is designed to help UMD students discover places to visit near stops
 on the Washington, DC Metro Green Line (since this line is the most accessible from campus).
-It uses Google Map APIS (Geocoding and New Places) to gather and filter location data.
+It uses Google Map APIS (Geocoding and Places) to gather and filter location data.
 
 Users can specify their preferences including:
 - type of activity (ie: museum, restaurant, park)
@@ -110,8 +110,9 @@ class MetroPlacesFinder:
             for place in response["results"]:
                 self.places_data.append({
                     "name": place.get("name", "Unknown Name"),
-                    "type_of_activity": place.get("types", ["Unknown Type of Activity"])[0]
-                })
+                    "type_of_activity": place.get("types", ["Unknown Type of Activity"])[0],
+                    "location": place.get("geometry", {}).get("location", {})
+                })  
 
         print("Processed Places Data:", self.places_data)
 
@@ -128,20 +129,35 @@ class MetroPlacesFinder:
         distance_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
 
         for place in self.places_data:
-            destination = f"{place['location'].get('latitude')}, {place['location'].get('longitude')}"
+            location = place.get("location")
+            if not location:
+                print(f"Skipping place '{place.get('name')}' due to missing coordinates.")
+                continue
+
+            destination = f"{location.get('lat')},{location.get('lng')}"
             origin = f"{self.location['lat']},{self.location['lng']}"
+
             params = {
                 "origins": origin,
-                "destinations": destination, 
+                "destinations": destination,
                 "mode": "walking",
                 "key": self.api_key
             }
+
             response = requests.get(distance_url, params=params).json()
 
-            if response.get('rows'):
-                place["walking distance"] = response['rows'][0]['elements'][0]['distance']['value']
+            try:
+                element = response['rows'][0]['elements'][0]
+                if element.get("status") == "OK":
+                    place["walking_distance"] = element['distance']['value']
+                else:
+                    print(f"Distance data not available for '{place.get('name')}', status: {element.get('status')}")
+                    place["walking_distance"] = float('inf')  # Consider unreachable
+            except (IndexError, KeyError) as e:
+                print(f"Error processing distance for '{place.get('name')}': {e}")
+                place["walking_distance"] = float('inf')  # Also treat as unreachable
 
-        print("Updates Places with Walking Distances:"), self.places_data
+        print("Updated Places with Walking Distances:", self.places_data)
 
     def places_filter(self, user_preferences):
         """ This method filters nearby places based on user-defined preferences
@@ -184,7 +200,7 @@ class MetroPlacesFinder:
                 score += (len(user_preferences["type_of_activity"]) - rank_of_activity) * weights.get("activity", 1)
 
             #distance score
-            distance_score = max(0, user_preferences["max_distance"] - place["walking_distance"])
+            distance_score = max(0, user_preferences["max_walking_distance"] - place["walking_distance"])
             score += distance_score * weights.get("distance", 1)
 
             #rating score
@@ -210,5 +226,11 @@ class MetroPlacesFinder:
 if __name__ == "__main__":
     API_KEY = load_api_key() 
     scraper = MetroPlacesFinder("Columbia Heights", API_KEY)
+    
+    # Get nearby places first
     scraper.get_nearby_places()
-    print(scraper.places_data)
+    print("Places Data After Fetching:", scraper.places_data)
+    
+    # Now calculate walking distances for each place
+    scraper.calculate_walking_distance()
+    print("Places Data After Calculating Walking Distance:", scraper.places_data)
