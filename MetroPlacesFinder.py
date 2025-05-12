@@ -1,5 +1,15 @@
 """This is a python script for the final project, INST 326.
 
+DC Metro Travel Guide for UMD Students
+
+This script is designed to help UMD students discover places to visit near stops
+on the Washington, DC Metro Green Line (since this line is the most accessible from campus).
+It uses Google Map APIS (Geocoding and New Places) to gather and filter location data.
+
+Users can specify their preferences including:
+- type of activity (ie: museum, restaurant, park)
+- max acceptable walking distance from the metro station
+
 Driver: Abbey Vanasse
 Navigator: Isabel Saffell
 Assignment: Final Project, DC Travel Guide 
@@ -11,23 +21,30 @@ import requests
 import os
 
 def load_api_key(filepath="google_api_key.txt"):
+    """ This function loads the Google API key from a local file
+
+    Args:
+        filepath(str): path to the file containing the API key. Default is "google_api_key.txt"
+
+    Returns:
+        str: the API key as a string
+    
+    """
     with open(filepath, "r") as f:
         return f.read().strip()
 
 class MetroPlacesFinder:
-    """A class for scraping and recommending places in the DMV 
-    area along the Metro Green Line based on user preferences such 
-    as type of activity, walking distance from the metro, Google-based ratings.
+    """A class for finding and recommending places in the near the Washingotn, DC 
+    Metro Green Line based on user preferences such as type of activity and walking distance from the metro.
     """
 
     def __init__(self, metro_stop_name, api_key):
-        """ This method will initialize the metro stop name and the api key
+        """ This method will initialize the MetroPlacesFinder object
         
         Args: 
             metro_stop_name (str): the name of the metro green line stop.
-            api_key (str)
+            api_key (str): Google Maps API ky
         """
-
         self.metro_stop_name = metro_stop_name
         self.api_key = api_key
         self.places_data = []
@@ -35,15 +52,17 @@ class MetroPlacesFinder:
 
     def get_location_coordinates(self):
         """ This method uses the Geocoding API to get latitude and longitude coordinates
+        of the given Metro stop.
         
-        Args:
+        Returns:
+            dict or None: a dictionary with 'lat' and 'lng' if successful, otherwise, None
         """
         geo_url = f"https://maps.googleapis.com/maps/api/geocode/json"
         parameters = {
             "address": f"{self.metro_stop_name} Metro Station, DMV Area", 
             "key": self.api_key
         }
-        response = requests.get(geo_url, parameters=parameters).json()
+        response = requests.get(geo_url, params=parameters).json()
         
         if response["results"]:
             location = response["results"][0]["geometry"]["location"]
@@ -52,12 +71,16 @@ class MetroPlacesFinder:
         return None
     
     def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attraction"]):
-        """This method uses the Nearby Search (New) API to get places within a specified area.
+        """This method uses the Google Nearby Search (New) API to get retrieve nearby places within a certain
+        radius of the Metro stop.
 
         Args:
+            radius_meters(int): radius around the metro station in meters to search. Default is 1000.
+            included_types(list): List of place types to include in the search. Default is ["tourist_attraction"]
 
+        Returns:
+            self.places_data(list): a list of dictionaries with information about each place found
         """
-
         if not self.location:
             print("Error: Could not get location coordinates.")
             return
@@ -98,17 +121,16 @@ class MetroPlacesFinder:
         print("Processed Places Data:", self.places_data)
 
     def places_filter(self, user_preferences):
-        """ This method will filter the list of places near the specified 
-        Green Line stop given the user preferences.
+        """ This method filters nearby places based on user-defined preferences
 
         Args:
-            user_prefereces (dict): dictionary with keys such as type_of_activity, 
-            max_walking_distance ():
+            user_prefereces (dict): dictionary with keys
+                - "type_of_activity" (list of str): desired types of activities
+                - "max_walking_distance" (float): maximum walking distance allowed (in meters)
 
         Returns:
             list: filtered list of places based off of user_preferences
         """
-
         filtered_list = []
         for place in self.places_data:
             if (place["type_of_activity"] in user_preferences["type_of_activity"] and
@@ -117,8 +139,8 @@ class MetroPlacesFinder:
         return filtered_list
     
     def places_ranker(self, filtered_places, user_preferences, weights):
-        """ This method will sort the list of filtered places to provide the 
-        best matches based on the usee preferences and weights.
+        """ This method ranks the list of filtered places to provide the 
+        best matches based on the user preferences and weights using a scoring system.
 
         Args:
             filtered_places (list): the list of places from places_filter
@@ -130,7 +152,6 @@ class MetroPlacesFinder:
         Returns:
             list: list of recommended places, sorted from best to worst match for the user.
         """
-
         def calculate_score(place):
             score = 0
 
