@@ -8,6 +8,9 @@ Date: 4/19/2025
 Challenges Encountered:
 """
 import MetroPlacesFinder
+import pandas as pd
+
+
 class User_Preference: 
     """A class for obtaining the user preferences for a travel guide from Green Line Metro stops."""
     def __init__(self, users_name = "Guest"):
@@ -43,13 +46,13 @@ class User_Preference:
         for place in places:
                 score = 0
                 
-                if place["type_of_actvitity"].lower in self .preferences["type_of_activity"]:
+                if place["type_of_activity"].lower() in self.preferences["type_of_activity"]:
                     rank = self.preferences["type_of_activity"].index(place["type_of_activity"].lower())
                     score += (len(self.preferences["type_of_activity"]) - rank ) *5
                     
-                distance_score = max(0, self.preferences["max_walking_distance"] - places.get("walking_distance", 0))
+                distance_score = max(0, self.preferences["max_walking_distance"] - place.get("walking_distance", 0))
                 score += distance_score*3
-                rating_score = max(0, places.get("rating", 0) - self.preferences.get("min_rating", 0))
+                rating_score = max(0, place.get("rating", 0) - self.preferences.get("min_rating", 0))
                 score += rating_score *1
                 
                 ranked_places.append({**place, "score": score})
@@ -102,11 +105,25 @@ class User_Preference:
         max_distance = float(input("What is the maximum distance you want to walk in miles?\n "))
         self.preferences["max_walking_distance"] = max_distance
     
+   # def load_api_key(filepath="google_api_key.txt"):
+        """ This function loads the Google API key from a local file
+
+        Args:
+            filepath(str): path to the file containing the API key. Default is "google_api_key.txt"
+
+        Returns:
+            str: the API key as a string
+        
+        """
+        #with open(filepath, "r") as f:
+        #    return f.read().strip()
         
 if __name__ == "__main__":
 
     API_KEY = MetroPlacesFinder.load_api_key()
     
+    
+    #API_KEY = User_Preference.load_api_key
     user = User_Preference()
     user.user_preferences()
 
@@ -119,5 +136,6 @@ if __name__ == "__main__":
     ranked_places = user.sort_activity_types(scraper.places_data)   
     print("Top 5 recommendations for you are:")
     for place in ranked_places[:5]:
-        print(f"- {place['name']} ({place['type_of_activity'].title()}, {place['distance']} miles")
+        print(f"- {place['name']} ({place['type_of_activity'].title()}, {place['walking_distance']} miles")
     
+   

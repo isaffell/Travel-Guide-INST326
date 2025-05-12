@@ -20,16 +20,17 @@ Date: 4/19/2025
 import requests
 import os
 
-def load_api_key(filepath= r"C:\Users\abiga\OneDrive\Desktop\Travel Guide INST326\google_api_key.txt"):
+def load_api_key(filepath= r"google_api_key.txt"):
     """ This function loads the Google API key from a local file
 
-    Args:
-        filepath(str): path to the file containing the API key. Default is "google_api_key.txt"
+        Args:
+            filepath(str): path to the file containing the API key. Default is "google_api_key.txt"
 
-    Returns:
-        str: the API key as a string
-    
-    """
+        Returns:
+            str: the API key as a string
+        
+        """
+  
     with open(filepath, "r") as f:
         return f.read().strip()
 
@@ -104,7 +105,7 @@ class MetroPlacesFinder:
 
         # Make the GET request
         response = requests.get(url, params=params).json()
-        print("API Response:", response)
+        #print("API Response:", response)
 
         if "results" in response:
             for place in response["results"]:
@@ -114,7 +115,7 @@ class MetroPlacesFinder:
                     "location": place.get("geometry", {}).get("location", {})
                 })  
 
-        print("Processed Places Data:", self.places_data)
+        #print("Processed Places Data:", self.places_data)
 
     def calculate_walking_distance(self):
         """
