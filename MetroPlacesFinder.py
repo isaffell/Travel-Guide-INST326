@@ -20,7 +20,7 @@ Date: 4/19/2025
 import requests
 import os
 
-def load_api_key(filepath="google_api_key.txt"):
+def load_api_key(filepath= r"C:\Users\abiga\OneDrive\Desktop\Travel Guide INST326\google_api_key.txt"):
     """ This function loads the Google API key from a local file
 
     Args:
@@ -70,7 +70,7 @@ class MetroPlacesFinder:
             return location
         return None
     
-    def get_nearby_places(self, radius_meters=1000, included_types=["tourist_attraction"]):
+    def get_nearby_places(self, radius_meters=5000, included_types=["tourist_attraction"]):
         """This method uses the Google Nearby Search (New) API to get retrieve nearby places within a certain
         radius of the Metro stop.
 
@@ -85,40 +85,63 @@ class MetroPlacesFinder:
             print("Error: Could not get location coordinates.")
             return
 
-        url = "https://places.googleapis.com/v1/places:searchNearby"
-        headers = {
-            "Content-Type": "application/json",
-            "Google-Api-Key": self.api_key,
-            "Google-FieldMask": "places.displayName,places.primaryType,places.location"
+        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        #headers = {
+            #"Content-Type": "application/json",
+            #"Google-Api-Key": self.api_key,
+            #"Google-FieldMask": "places.displayName,places.primaryType,places.location"
             #Field masks are a way for API callers to list fields that a request should return or update. 
             #Using a FieldMask allows the API to avoid unnecessary work and improves performance
-        }   
+        #} 
 
-        body = {
-            "includedTypes": included_types, 
-            "maxResultCount": 10, 
-            "locationRestriction": {
-                "circle": {
-                    "center":{
-                        "latitude":self.location["lat"],
-                        "longitude": self.location["lng"]
-                    },
-                    "radius": radius_meters
-                }
-            }
-        }   
+        # Parameters for the GET request
+        params = {
+            "location": f"{self.location['lat']},{self.location['lng']}",  # coordinates from Geocoding API
+            "radius": radius_meters,  # search radius in meters
+            "types": "|".join(included_types),  # type of places to filter (comma-separated list)
+            "key": self.api_key  # your API key
+        }
 
-        response = requests.post(url, headers=headers, json=body).json()
+        # Make the GET request
+        response = requests.get(url, params=params).json()
         print("API Response:", response)
 
-        if "places" in response:
-            for place in response["places"]:
+        if "results" in response:
+            for place in response["results"]:
                 self.places_data.append({
-                    "name": place.get("displayName", {}).get("text", "Unknown Name"),
-                    "type_of_activity": place.get("primaryType", "Unknown Type of Activity")
+                    "name": place.get("name", "Unknown Name"),
+                    "type_of_activity": place.get("types", ["Unknown Type of Activity"])[0]
                 })
 
         print("Processed Places Data:", self.places_data)
+
+    def calculate_walking_distance(self):
+        """
+        This method calculates the walking distance for each destination using the Distance Matrix API.
+        
+        """
+
+        if not self.places_data:
+            print("Error: No places data to calculate the distances")
+            return
+        
+        distance_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+
+        for place in self.places_data:
+            destination = f"{place['location'].get('latitude')}, {place['location'].get('longitude')}"
+            origin = f"{self.location['lat']},{self.location['lng']}"
+            params = {
+                "origins": origin,
+                "destinations": destination, 
+                "mode": "walking",
+                "key": self.api_key
+            }
+            response = requests.get(distance_url, params=params).json()
+
+            if response.get('rows'):
+                place["walking distance"] = response['rows'][0]['elements'][0]['distance']['value']
+
+        print("Updates Places with Walking Distances:"), self.places_data
 
     def places_filter(self, user_preferences):
         """ This method filters nearby places based on user-defined preferences
