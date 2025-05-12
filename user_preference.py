@@ -161,4 +161,4 @@ if __name__ == "__main__":
     for place in ranked_places[:5]:
         # Convert meters to miles (1 mile = 1609.34 meters)
         distance_in_miles = place['walking_distance'] / 1609.34
-        print(f"- {place['name']} ({place['type_of_activity'].title()}, {distance_in_miles:.1f} miles")
+        print(f"- {place['name']}, {place['type_of_activity'].title()}, {distance_in_miles:.1f} miles")
