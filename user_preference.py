@@ -1,18 +1,30 @@
 """This is a python script for the final project, INST 326.
 
+DC Metro Travel Guide for UMD Students
+
+This script is designed to interact with the user and parse through the Google Maps API data. It does this by 
+prompting the user for their preferences and matching these preferences to API results. Then the script displays 
+this data to the user in a list format and the final travel guide result. 
+
 Driver: Isabel Saffell
 Navigator: Abbey Vanasse
 Assignment: Final Project, DC Travel Guide 
 Date: 4/19/2025
 
-Challenges Encountered:
+Challenges Encountered: Challenges encountered were meshing the two coding scripts together. Incorporating MetroPlacesFinder was
+slightly difficult because we had some issues with the API. After these were resolved it was diffiuclt to parse through the data outputted
+by the API. This was fixed by matching the label for our activity types to the labels the API gave to activities. 
 """
-import MetroPlacesFinder
-import pandas as pd
 
+#importing the MetroPlacesFinder file that accesses the API
+import MetroPlacesFinder
 
 class User_Preference: 
-    """A class for obtaining the user preferences for a travel guide from Green Line Metro stops."""
+    """A class for obtaining the user preferences for a travel guide from Green Line Metro stops. Based on the user's stop, the program
+    compares their preferences to Google Maps locations to provide them with a travel guide. This class parses through the API data to match
+    it to the user preference labels we created. It also interacts with the user to obtain their preferences. 
+    """
+    
     def __init__(self, users_name = "Guest"):
         """Assigns attributes with defualt values and instanstiates them. 
         
@@ -33,7 +45,17 @@ class User_Preference:
         }
     
     def map_activity_types_to_google_places_api(self, user_activity_types):
-        """Maps user-friendly activity types to Google Places API types."""
+        """Maps user-friendly activity types to Google Places API types.
+        
+        Args: 
+            user_activity_types(list): A list of strings representing activity 
+            types that the user selects 
+            
+        Returns: 
+            list: list of API specific types as strings that match what the user selects. Duplicates are removed.
+        """
+        
+        #matches our assigned labels for acitivty types to the Google API categories for activity types
         google_api_types = {
             "food": ["restaurant", "cafe", "bakery", "meal_takeaway", "meal_delivery"],
             "museums and monuments": ["museum", "art_gallery", "historical_landmark", "tourist_attraction"],
@@ -54,22 +76,30 @@ class User_Preference:
         """Sorts the places based on how well they match the user's input preferences.
         
         Args:
-            places(list): list of dictionaries with name value and acitivty key
+            places(list): list of dictionaries with name value and activity key. Each dictionary represnts a place. 
+                Each dictionary has:
+                    type_of_activity(str): activity type of the place
+                    walking_distance(float,optional): walking distance 
+                    rating(float,optional): place's rating
             
         Returns:
-            matched_places: places sorted by user preference input
+            list: list of places with a "score" key sorted from highest to lowest. 
         """
         ranked_places = []
         
         for place in places:
                 score = 0
                 
+                #checks if the activity type matches user preference and adds points to "rank" based on user preference
                 if place["type_of_activity"].lower() in self.preferences["type_of_activity"]:
                     rank = self.preferences["type_of_activity"].index(place["type_of_activity"].lower())
                     score += (len(self.preferences["type_of_activity"]) - rank ) *5
                     
+                #calculates walking distance score
                 distance_score = max(0, self.preferences["max_walking_distance"] - place.get("walking_distance", 0))
                 score += distance_score*3
+                
+                #calculates rating score
                 rating_score = max(0, place.get("rating", 0) - self.preferences.get("min_rating", 0))
                 score += rating_score *1
                 
@@ -95,12 +125,16 @@ class User_Preference:
         
         activity_types = ["Food", "Museums and Monuments", "Sporty", "Social", "Nature"]
       
+        #takes users name and stores it to refer to them
         self.users_name = input(f"Hello, what is your name?" + "\n")
         print(f"Hello {self.users_name}! Welcome to the Green Line Metro Trip Guide!\n")
+        
+        #introduces user to the program
         print(f"Based on your preferences, you will be provided with the top 5 places to travel to.\n") 
         print(f"These are the Green Line Metro stop options, from College Park to D.C. :\n")
         print(", ".join(all_metro_stops) + "\n")
         
+        #user inputs which metro stop they will get off at
         metro_stop_name = input("Which metro stop would you like to get off at? Please enter name precisely with '-' if necessary.\n")
         self.metro_stop_name = metro_stop_name
         
@@ -111,7 +145,7 @@ class User_Preference:
         print("These are the following activity types: " + ", ".join(activity_types) + "\n")
        
         
-        user_places = input(f"Please enter the activity type in order from most preferred to least, separating with commas.\n")
+        user_places = input(f"Please enter the activity type you prefer.\n")
         user_places_list = user_places.split(",")
         stripped_activities = []
         
@@ -123,23 +157,10 @@ class User_Preference:
         max_distance = float(input("What is the maximum distance you want to walk in miles?\n "))
         self.preferences["max_walking_distance"] = max_distance
     
-   # def load_api_key(filepath="google_api_key.txt"):
-        """ This function loads the Google API key from a local file
-
-        Args:
-            filepath(str): path to the file containing the API key. Default is "google_api_key.txt"
-
-        Returns:
-            str: the API key as a string
-        
-        """
-        #with open(filepath, "r") as f:
-        #    return f.read().strip()
-        
-# In user_preference (1).py, within the if __name__ == "__main__": block:
 
 if __name__ == "__main__":
 
+    #calls MetroPlacesFinder to get the API key from a file
     API_KEY = MetroPlacesFinder.load_api_key()
     
     user = User_Preference()
@@ -161,4 +182,5 @@ if __name__ == "__main__":
     for place in ranked_places[:5]:
         # Convert meters to miles (1 mile = 1609.34 meters)
         distance_in_miles = place['walking_distance'] / 1609.34
+        #For each stop prints the name, activity type, and distance separated by commas
         print(f"- {place['name']}, {place['type_of_activity'].title()}, {distance_in_miles:.1f} miles")
