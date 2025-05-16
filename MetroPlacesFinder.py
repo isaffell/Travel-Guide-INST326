@@ -20,7 +20,7 @@ Date: 4/19/2025
 import requests
 import os
 
-def load_api_key(filepath= r"google_api_key.txt"):
+def load_api_key(filepath= "google_api_key.txt"):
     """ This function loads the Google API key from a local file
 
         Args:
@@ -158,7 +158,7 @@ class MetroPlacesFinder:
                 print(f"Error processing distance for '{place.get('name')}': {e}")
                 place["walking_distance"] = float('inf')  # Also treat as unreachable
 
-        #print("Updated Places with Walking Distances:", self.places_data)
+        print("Updated Places with Walking Distances:", self.places_data)
 
     def places_filter(self, user_preferences):
         """ This method filters nearby places based on user-defined preferences
