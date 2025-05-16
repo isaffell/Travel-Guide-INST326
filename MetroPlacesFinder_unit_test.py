@@ -6,7 +6,6 @@ class TestMetroPlacesFinder(unittest.TestCase):
         """ Sets up the MetroPlacesFinder instance and any initial test data included."""
         self.finder = MetroPlacesFinder("Navy-Yard Ballpark", api_key="dummy_test_key")
 
-        #manually set mock places data (skipping actual API calls)
         self.finder.places_data = [
             {"name": "Bluejacket", "type_of_activity": "brewery", "walking_distance": 0.3},
             {"name": "Diamond Teague Park", "type_of_activity": "park", "walking_distance": 0.4},
@@ -36,7 +35,13 @@ class TestMetroPlacesFinder(unittest.TestCase):
         self.assertTrue(all(place["type_of_activity"] in self.user_preferences["type_of_activity"]
                             for place in filtered))
         # assertEqual(a,b) checks whether a == b 
-        # should return 3 places that match the filter. Once we web scrape, may include more.
+        # should return five places that match the filter
+
+    def test_filter_with_empty_places(self):
+        """Tests that filtering with no places returns an empty list."""
+        self.finder.places_data = []
+        filtered = self.finder.places_filter(self.user_preferences)
+        self.assertEqual(filtered, [])
     
     def test_places_ranker(self):
         """This tests the places_ranker method and returns places ordered by score."""
@@ -48,9 +53,6 @@ class TestMetroPlacesFinder(unittest.TestCase):
         self.assertTrue(ranked[0]["score"] >= ranked[-1]["score"])
         self.assertTrue(ranked[0]["score"] > ranked[1]["score"], "First place should have a higher score")
 
-
-#if __name__ == "__main__":
-    #Unittest.main()
 
 if __name__ == "__main__":
     unittest.main()
